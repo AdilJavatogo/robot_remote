@@ -27,6 +27,10 @@ class UdpTwistBridge(Node):
         try:
             # Læs data fra MAUI (1024 bytes buffer)
             data, addr = self.sock.recvfrom(1024)
+
+            # Se om data kommer frem
+            self.get_logger().info(f"Modtog data fra {addr}: {data}")
+
             message = data.decode('utf-8')
             
             # Konverter JSON tekst til et Python dictionary
