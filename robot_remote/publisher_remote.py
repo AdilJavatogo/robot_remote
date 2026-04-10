@@ -7,61 +7,55 @@ import json
 class UdpTwistBridge(Node):
     def __init__(self):
         super().__init__('udp_twist_bridge')
-        
-        # Opret en publisher til Twist-beskeden (standard topic til bevægelse)
         self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
         
-        # --- Opsætning af UDP Server ---
-        self.udp_ip = "0.0.0.0" # Lytter på alle netværkskort (WiFi/Ethernet)
-        self.udp_port = 5000    # VIGTIGT: Denne port skal matche porten i din MAUI UdpSenderService
+        self.udp_ip = "0.0.0.0"
+        self.udp_port = 5000
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((self.udp_ip, self.udp_port))
-        self.sock.setblocking(False) # Gør socket non-blocking, så ROS2 spin-loopet ikke fryser
         
-        # Opret en timer, der kører 50 gange i sekundet (50 Hz) for at læse nye UDP pakker
-        self.timer = self.create_timer(0.02, self.receive_udp_callback)
-        self.get_logger().info(f"Starter UDP til Twist bro. Lytter på port {self.udp_port}...")
+        # VIGTIGT: Dette forhindrer scriptet i at fryse, mens det venter på data
+        self.sock.setblocking(False) 
+        
+        # Tjekker efter ny data 20 gange i sekundet (0.05) uden at blokere
+        self.timer = self.create_timer(0.05, self.timer_callback)
+        self.get_logger().info(f"Lytter efter UDP-pakker på port {self.udp_port}...")
 
-    def receive_udp_callback(self):
+    def timer_callback(self):
         try:
-            # Læs data fra MAUI (1024 bytes buffer)
             data, addr = self.sock.recvfrom(1024)
-
-            # Se om data kommer frem
-            self.get_logger().info(f"Modtog data fra {addr}: {data}")
-
-            message = data.decode('utf-8')
+            tekst_data = data.decode('utf-8')
+            self.get_logger().info(f"Modtog: {tekst_data} fra {addr}")
             
-            # Konverter JSON tekst til et Python dictionary
-            # Vi forventer f.eks.: {"linearX": 0.5, "angularZ": -0.2}
-            json_data = json.loads(message)
+            json_data = json.loads(tekst_data)
             
-            # Opret ROS2 Twist beskeden
-            twist_msg = Twist()
-            twist_msg.linear.x = float(json_data.get('linearX', 0.0))
-            twist_msg.angular.z = float(json_data.get('angularZ', 0.0))
+            msg = Twist()
+            # Vi kigger efter BÅDE store og små bogstaver for at fikse C#-problemet
+            msg.linear.x = float(json_data.get('LinearX', json_data.get('linearX', 0.0)))
+            msg.angular.z = float(json_data.get('AngularZ', json_data.get('angularZ', 0.0)))
             
-            # Send beskeden ud på ROS2 netværket
-            self.publisher_.publish(twist_msg)
-            
-            # Fjern udkommenteringen af linjen under, hvis du vil se data i konsollen ved modtagelse
-            # self.get_logger().info(f"Modtog: Lin_x={twist_msg.linear.x}, Ang_z={twist_msg.angular.z}")
+            self.publisher_.publish(msg)
             
         except BlockingIOError:
-            # Sker hele tiden, fordi der ikke altid er nye pakker klar. Det ignorerer vi bare.
+            # Ingen data i køen lige nu. Programmet kører bare videre.
             pass
         except json.JSONDecodeError:
-            self.get_logger().error("Kunne ikke læse JSON. Er du sikker på MAUI sender valid JSON?")
+            self.get_logger().error("Modtog data, men det var ikke gyldigt JSON")
         except Exception as e:
             self.get_logger().error(f"Uventet fejl: {e}")
 
 def main(args=None):
     rclpy.init(args=args)
     node = UdpTwistBridge()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info("Lukker pænt ned...")
+    finally:
+        node.sock.close()
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
