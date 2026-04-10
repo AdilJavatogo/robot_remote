@@ -9,7 +9,7 @@ class UdpTwistBridge(Node):
         super().__init__('udp_twist_bridge')
         
         # Opret en publisher til Twist-beskeden (standard topic til bevægelse)
-        self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
+        self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
         
         # --- Opsætning af UDP Server ---
         self.udp_ip = "0.0.0.0" # Lytter på alle netværkskort (WiFi/Ethernet)
