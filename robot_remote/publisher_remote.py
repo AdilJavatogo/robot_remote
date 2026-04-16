@@ -1,13 +1,13 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped #Twist
 import socket
 import json
 
 class UdpTwistBridge(Node):
     def __init__(self):
         super().__init__('udp_twist_bridge')
-        self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.publisher_ = self.create_publisher(TwistStamped, '/cmd_vel', 10) # Vi bruger 'turtle1/cmd_vel' for at matche det, som turtlesim forventer / minus Twist
         
         self.udp_ip = "0.0.0.0"
         self.udp_port = 5000
@@ -30,7 +30,12 @@ class UdpTwistBridge(Node):
             
             json_data = json.loads(tekst_data)
             
-            msg = Twist()
+            msg = TwistStamped()            #msg = Twist()
+
+            # Tilføj det obligatoriske tidsstempel og frame (kræves af Webots/Jazzy)
+            msg.header.stamp = self.get_clock().now().to_msg()
+            msg.header.frame_id = 'base_link'
+
             # Vi kigger efter BÅDE store og små bogstaver for at fikse C#-problemet
             msg.linear.x = float(json_data.get('LinearX', json_data.get('linearX', 0.0)))
             msg.angular.z = float(json_data.get('AngularZ', json_data.get('angularZ', 0.0)))
