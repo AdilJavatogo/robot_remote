@@ -8,7 +8,7 @@ class IntersectionDetectorNode(Node):
         super().__init__('intersection_detector')
 
         # Opret en subscriber for lidar data (/scan)
-        self.subscription = self.create_subscription(LaserScan,'/scan',self.lidar_callback,10)
+        self.subscription = self.create_subscription(LaserScan,'/base_scan',self.lidar_callback,10)
 
         # Opret en publisher for kryds-status (/is_intersection)
         self.publisher_ = self.create_publisher(Bool, '/is_intersection', 10)

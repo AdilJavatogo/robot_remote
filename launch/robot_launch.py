@@ -3,7 +3,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     # Oversætter din Windows-sti til en WSL-sti, som ROS kan forstå
-    world_file_path = '/mnt/c/Projekter/ros2_ws/src/stage_ros2/world/lines.world'
+    world_file_path = '/mnt/c/Projekter/ros2_ws/src/stage_ros2/world/test.world'
 
     return LaunchDescription([
         # 1. Stage Simulator (Starter den virtuelle verden)
