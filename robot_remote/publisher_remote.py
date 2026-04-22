@@ -12,12 +12,7 @@ class UdpTwistBridge(Node):
         self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10) # Vi bruger 'turtle1/cmd_vel' for at matche det, som turtlesim forventer / minus Twist
 
         # NYT: Abonner på et topic, der fortæller om vi er i et kryds
-        self.intersection_sub = self.create_subscription(
-            Bool, 
-            '/is_intersection', 
-            self.intersection_callback, 
-            10
-        )
+        self.intersection_sub = self.create_subscription(Bool, '/is_intersection', self.intersection_callback, 10)
         self.is_in_intersection = False # Standard antagelse: vi er på en gang
         
         self.udp_ip = "0.0.0.0"

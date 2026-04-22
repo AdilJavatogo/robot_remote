@@ -1,3 +1,5 @@
+import os
+from glob import glob
 from setuptools import find_packages, setup
 
 package_name = 'robot_remote'
@@ -10,6 +12,8 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        # NY LINJE TIL LAUNCH-FILER:
+        (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*'))),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -25,6 +29,7 @@ setup(
     entry_points={
         'console_scripts': [
             'publisher_remote = robot_remote.publisher_remote:main',
+            'intersection_detector = robot_remote.intersection_detector:main'
         ],
     },
 )
